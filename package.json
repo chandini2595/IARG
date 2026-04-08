@@ -1,0 +1,64 @@
+{
+  "name": "iarg",
+  "version": "1.0.0",
+  "description": "Intangible-Asset Risk Guardian - Agentic solution for asset discovery, risk scoring and coverage optimization",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:dash\" \"npm run dev:services\"",
+    "dev:dash": "cd app/dash && npm run dev",
+    "dev:services": "docker-compose up -d",
+    "dev:ingest": "cd app/ingest && npm run dev",
+    "build": "npm run build:dash && npm run build:services",
+    "build:dash": "cd app/dash && npm run build",
+    "build:services": "docker-compose build",
+    "test": "npm run test:dash && npm run test:services",
+    "test:dash": "cd app/dash && npm run test",
+    "test:services": "npm run test:ingest && npm run test:graph && npm run test:score",
+    "test:ingest": "cd app/ingest && npm test",
+    "test:graph": "cd app/graph && go test ./...",
+    "test:score": "cd app/score && python -m pytest",
+    "lint": "npm run lint:dash && npm run lint:services",
+    "lint:dash": "cd app/dash && npm run lint",
+    "lint:services": "npm run lint:ingest",
+    "lint:ingest": "cd app/ingest && npm run lint",
+    "format": "prettier --write \"**/*.{js,ts,json,md}\"",
+    "setup": "npm install && npm run setup:services",
+    "setup:services": "cd app/dash && npm install && cd ../ingest && npm install",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "infra:plan": "cd app/iac && terraform plan",
+    "infra:apply": "cd app/iac && terraform apply",
+    "infra:destroy": "cd app/iac && terraform destroy"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "prettier": "^3.1.0",
+    "@commitlint/cli": "^18.4.3",
+    "@commitlint/config-conventional": "^18.4.3",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0"
+  },
+  "workspaces": [
+    "app/dash",
+    "app/ingest"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/iarg.git"
+  },
+  "keywords": [
+    "asset-management",
+    "risk-assessment",
+    "insurance",
+    "ai",
+    "microservices",
+    "event-driven"
+  ],
+  "author": "IARG Team",
+  "license": "MIT"
+}
