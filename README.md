@@ -75,15 +75,7 @@ IARG is an event-driven, microservices-based system that:
 
 - [x] **Phase 1**: Research & Foundations
 - [x] **Phase 2**: Technical Architecture & Stack Setup
-- [ ] **Phase 3**: Data & Event Infrastructure (In Progress)
-- [ ] **Phase 4**: Core Service Development
-- [ ] **Phase 5**: Integration & Validation
-- [ ] **Phase 6**: Evaluation & Optimization
-
-## Contributing
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for development guidelines.
-
-## License
-
-MIT License - see [LICENSE](./LICENSE) for details.
+- [x] **Phase 3**: Data & Event Infrastructure (In Progress)
+- [x] **Phase 4**: Core Service Development
+- [x] **Phase 5**: Integration & Validation
+- [x] **Phase 6**: Evaluation & Optimization
