@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 760" font-family="Inter, system-ui, sans-serif">
+  <defs>
+    <style>
+      .bg { fill: #020617; }
+      .sidebar { fill: #0b1220; }
+      .page { fill: #030712; }
+      .card { fill: #0b1220; stroke: #1e3a8a; stroke-opacity: 0.4; }
+      .input { fill: #111827; stroke: #1d4ed8; stroke-opacity: 0.35; }
+      .user-bubble { fill: #10b981; fill-opacity: 0.12; stroke: #10b981; stroke-opacity: 0.4; }
+      .bot-bubble { fill: #111827; stroke: #1d4ed8; stroke-opacity: 0.4; }
+      .btn-primary { fill: #2563eb; }
+      .btn-secondary { fill: #1f2937; stroke: #374151; }
+      .nav-active { fill: #1e3a8a; fill-opacity: 0.3; stroke: #3b82f6; stroke-opacity: 0.5; }
+      .text-primary { fill: #f3f4f6; }
+      .text-muted { fill: #9ca3af; }
+      .text-dim { fill: #6b7280; }
+      .text-accent { fill: #93c5fd; }
+      .text-user { fill: #d1fae5; }
+      .divider { stroke: #1e3a8a; stroke-opacity: 0.4; stroke-width: 1; }
+      .live { fill: #34d399; }
+      text { font-size: 13px; }
+      .title { font-size: 20px; font-weight: 600; }
+      .caption { font-size: 11px; }
+      .bold { font-weight: 600; fill: #ffffff; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1280" height="760"/>
+
+  <!-- Sidebar (same as empty state) -->
+  <rect class="sidebar" x="0" y="0" width="240" height="760"/>
+  <circle cx="36" cy="42" r="14" fill="#1e3a8a"/>
+  <text class="text-primary" x="60" y="40" font-weight="600" font-size="16">IARG</text>
+  <text class="text-muted" x="60" y="58" font-size="11">Intangible-Asset Risk Guardian</text>
+  <circle cx="24" cy="88" r="4" class="live"/>
+  <text class="text-muted" x="36" y="92" font-size="11">Live Monitor</text>
+  <g font-size="13">
+    <text class="text-muted" x="48" y="143">Monitor</text>
+    <text class="text-muted" x="48" y="183">Assets</text>
+    <text class="text-muted" x="48" y="223">Risk Scoring</text>
+    <text class="text-muted" x="48" y="263">Insurance</text>
+    <rect class="nav-active" x="12" y="280" width="216" height="36" rx="6"/>
+    <rect x="12" y="280" width="4" height="36" fill="#3b82f6"/>
+    <text class="text-accent" x="48" y="303" font-weight="600">Assistant</text>
+    <text class="text-muted" x="48" y="343">Settings</text>
+  </g>
+
+  <!-- Main area -->
+  <rect class="page" x="240" y="0" width="1040" height="760"/>
+  <text class="text-primary title" x="280" y="60">Assistant</text>
+  <text class="text-muted" x="280" y="86">Free chatbot powered by a public LLM endpoint. No API key required.</text>
+
+  <text class="text-muted caption" x="920" y="60">Model</text>
+  <rect class="input" x="960" y="42" width="220" height="30" rx="6"/>
+  <text class="text-primary" x="972" y="62">Mistral Nemo Instruct (free)</text>
+  <polygon points="1162,56 1172,56 1167,64" fill="#9ca3af"/>
+  <rect class="btn-secondary" x="1192" y="42" width="36" height="30" rx="6"/>
+  <text x="1206" y="62" fill="#9ca3af" font-size="14">🗑</text>
+
+  <!-- Chat card -->
+  <rect class="card" x="280" y="120" width="948" height="580" rx="10"/>
+
+  <!-- User bubble (right) -->
+  <rect class="user-bubble" x="820" y="150" width="360" height="40" rx="8"/>
+  <text class="text-user" x="836" y="174">How is a risk score computed in IARG?</text>
+  <circle cx="1200" cy="170" r="14" fill="#10b981" fill-opacity="0.2" stroke="#10b981" stroke-opacity="0.5"/>
+  <text x="1200" y="174" text-anchor="middle" fill="#10b981" font-size="12">👤</text>
+
+  <!-- Bot bubble (left) -->
+  <circle cx="316" cy="226" r="14" fill="#1e3a8a" fill-opacity="0.4" stroke="#3b82f6" stroke-opacity="0.6"/>
+  <text x="316" y="230" text-anchor="middle" fill="#93c5fd" font-size="12">🤖</text>
+
+  <rect class="bot-bubble" x="344" y="206" width="720" height="320" rx="8"/>
+  <text class="text-primary" x="364" y="232">The risk score is a weighted combination of five normalized factors:</text>
+
+  <g font-size="13">
+    <circle cx="378" cy="262" r="2.5" fill="#93c5fd"/>
+    <text class="bold" x="388" y="266">Commits</text>
+    <text class="text-primary" x="448" y="266">— activity in the scan window.</text>
+
+    <circle cx="378" cy="286" r="2.5" fill="#93c5fd"/>
+    <text class="bold" x="388" y="290">Open PRs</text>
+    <text class="text-primary" x="458" y="290">— pending review surface.</text>
+
+    <circle cx="378" cy="310" r="2.5" fill="#93c5fd"/>
+    <text class="bold" x="388" y="314">Open issues</text>
+    <text class="text-primary" x="474" y="314">— unresolved risk indicators.</text>
+
+    <circle cx="378" cy="334" r="2.5" fill="#93c5fd"/>
+    <text class="bold" x="388" y="338">Exposure</text>
+    <text class="text-primary" x="454" y="338">— public vs private, repo size proxy.</text>
+
+    <circle cx="378" cy="358" r="2.5" fill="#93c5fd"/>
+    <text class="bold" x="388" y="362">Stability</text>
+    <text class="text-primary" x="454" y="362">— penalty when the repo looks stale.</text>
+  </g>
+
+  <text class="text-primary" x="364" y="398">Each factor is normalized to 0–1 and combined into an activity score,</text>
+  <text class="text-primary" x="364" y="420">then scaled to a 0–100 risk score with a level label (low/medium/high/critical).</text>
+
+  <text class="text-muted" x="364" y="456">Insurance triggers when the score exceeds the threshold (default 70) and</text>
+  <text class="text-muted" x="364" y="478">the cooldown window has elapsed. See </text>
+  <text class="text-accent" x="608" y="478" text-decoration="underline">MVP.md</text>
+  <text class="text-muted" x="658" y="478">for the full flow.</text>
+
+  <!-- Input area -->
+  <line class="divider" x1="280" y1="620" x2="1228" y2="620"/>
+  <rect class="input" x="296" y="636" width="864" height="48" rx="6"/>
+  <text class="text-dim" x="310" y="664">Message the assistant…  (Enter to send, Shift+Enter for newline)</text>
+
+  <!-- Stop button since mid-request would be a different state; show Send here -->
+  <rect class="btn-primary" x="1172" y="636" width="56" height="48" rx="6"/>
+  <polygon points="1192,654 1210,660 1192,666 1194,660" fill="#f3f4f6"/>
+
+  <text class="text-muted caption" x="296" y="700">Responses come from a public free model and may be inaccurate. Avoid sending sensitive data.</text>
+</svg>

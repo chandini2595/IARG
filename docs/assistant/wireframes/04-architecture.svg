@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 560" font-family="Inter, system-ui, sans-serif">
+  <defs>
+    <style>
+      .bg { fill: #020617; }
+      .box { fill: #0b1220; stroke: #1e3a8a; stroke-opacity: 0.5; stroke-width: 1.5; rx: 10; }
+      .box-router { fill: #0b1220; stroke: #f59e0b; stroke-opacity: 0.6; stroke-width: 1.5; rx: 10; }
+      .box-outer { fill: none; stroke: #3b82f6; stroke-opacity: 0.3; stroke-dasharray: 6 4; stroke-width: 1; }
+      .text-primary { fill: #f3f4f6; }
+      .text-muted { fill: #9ca3af; }
+      .text-accent { fill: #93c5fd; }
+      .text-warm { fill: #fcd34d; }
+      .arrow { stroke: #93c5fd; stroke-width: 1.5; fill: none; marker-end: url(#arrow); }
+      .arrow-back { stroke: #34d399; stroke-width: 1.5; fill: none; marker-end: url(#arrow-g); stroke-dasharray: 4 3; }
+      .arrow-fb { stroke: #f59e0b; stroke-width: 1.2; fill: none; marker-end: url(#arrow-o); stroke-dasharray: 2 3; }
+      .label { fill: #cbd5e1; font-size: 11px; }
+      .label-warm { fill: #fcd34d; font-size: 11px; }
+      .title { font-size: 15px; font-weight: 600; }
+      text { font-size: 13px; }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#93c5fd"/>
+    </marker>
+    <marker id="arrow-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#34d399"/>
+    </marker>
+    <marker id="arrow-o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#f59e0b"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="1280" height="560"/>
+
+  <!-- Browser group -->
+  <rect class="box-outer" x="40" y="40" width="300" height="480" rx="12"/>
+  <text class="text-muted" x="60" y="68" font-size="12">BROWSER (dashboard)</text>
+
+  <rect class="box" x="60" y="100" width="260" height="90"/>
+  <text class="text-primary title" x="80" y="128">Chat.tsx</text>
+  <text class="text-muted" x="80" y="150" font-size="11">React page at /chat</text>
+  <text class="text-muted" x="80" y="166" font-size="11">Markdown render (react-markdown)</text>
+  <text class="text-muted" x="80" y="180" font-size="11">Probes /chat/providers for model list</text>
+
+  <rect class="box" x="60" y="210" width="260" height="60"/>
+  <text class="text-primary title" x="80" y="238">guardianApi (axios)</text>
+  <text class="text-muted" x="80" y="256" font-size="11">POST /api/guardian/chat</text>
+
+  <rect class="box" x="60" y="300" width="260" height="60"/>
+  <text class="text-primary title" x="80" y="328">Vite dev proxy</text>
+  <text class="text-muted" x="80" y="346" font-size="11">/api/guardian → :8003</text>
+
+  <!-- Guardian group -->
+  <rect class="box-outer" x="400" y="40" width="440" height="480" rx="12"/>
+  <text class="text-muted" x="420" y="68" font-size="12">GUARDIAN (FastAPI, Docker)</text>
+
+  <rect class="box" x="420" y="100" width="400" height="80"/>
+  <text class="text-primary title" x="440" y="128">POST /api/guardian/chat</text>
+  <text class="text-muted" x="440" y="150" font-size="11">routes.py — ChatRequest / ChatResponse</text>
+  <text class="text-muted" x="440" y="166" font-size="11">Clamp list size, reasoning-field fallback</text>
+
+  <rect class="box-router" x="420" y="200" width="400" height="90"/>
+  <text class="text-warm title" x="440" y="226">_resolve_provider() — router</text>
+  <text class="text-muted" x="440" y="248" font-size="11">GUARDIAN_CHAT_PROVIDER: auto | perplexity | llm7</text>
+  <text class="text-muted" x="440" y="264" font-size="11">auto → perplexity if PERPLEXITY_API_KEY set, else llm7</text>
+  <text class="text-muted" x="440" y="280" font-size="11">On 5xx (auto only), silent fallback → llm7</text>
+
+  <rect class="box" x="420" y="310" width="400" height="80"/>
+  <text class="text-primary title" x="440" y="338">httpx.AsyncClient (per-provider call)</text>
+  <text class="text-muted" x="440" y="358" font-size="11">timeout 60s, Bearer auth for Perplexity</text>
+  <text class="text-muted" x="440" y="374" font-size="11">Appends Sources: footer from citations[]</text>
+
+  <rect class="box" x="420" y="410" width="400" height="70"/>
+  <text class="text-primary title" x="440" y="438">Error mapping</text>
+  <text class="text-muted" x="440" y="458" font-size="11">401/403 → 502 "Check PERPLEXITY_API_KEY"</text>
+  <text class="text-muted" x="440" y="473" font-size="11">429 → 429 "Retry in Xs"</text>
+
+  <!-- Upstream providers -->
+  <rect class="box-outer" x="900" y="40" width="340" height="220" rx="12"/>
+  <text class="text-muted" x="920" y="68" font-size="12">PRIMARY (keyed)</text>
+
+  <rect class="box" x="920" y="100" width="300" height="80"/>
+  <text class="text-primary title" x="940" y="128">Perplexity Sonar</text>
+  <text class="text-muted" x="940" y="150" font-size="11">api.perplexity.ai/chat/completions</text>
+  <text class="text-muted" x="940" y="166" font-size="11">Bearer auth, OpenAI-compatible</text>
+
+  <rect class="box" x="920" y="190" width="300" height="60"/>
+  <text class="text-accent title" x="940" y="214">Sonar models</text>
+  <text class="text-muted" x="940" y="232" font-size="11">sonar, sonar-pro, sonar-reasoning,</text>
+  <text class="text-muted" x="940" y="246" font-size="11">sonar-reasoning-pro, sonar-deep-research</text>
+
+  <rect class="box-outer" x="900" y="300" width="340" height="220" rx="12"/>
+  <text class="text-muted" x="920" y="328" font-size="12">FALLBACK (no key)</text>
+
+  <rect class="box" x="920" y="360" width="300" height="80"/>
+  <text class="text-primary title" x="940" y="388">LLM7.io</text>
+  <text class="text-muted" x="940" y="410" font-size="11">api.llm7.io/v1/chat/completions</text>
+  <text class="text-muted" x="940" y="426" font-size="11">Free, no key, rate-limited turbo tier</text>
+
+  <rect class="box" x="920" y="450" width="300" height="60"/>
+  <text class="text-accent title" x="940" y="474">LLM7 models</text>
+  <text class="text-muted" x="940" y="492" font-size="11">mistral-nemo, gpt-oss:20b, nemotron-3-nano:30b</text>
+
+  <!-- Arrows (request path) -->
+  <line class="arrow" x1="190" y1="190" x2="190" y2="210"/>
+  <line class="arrow" x1="190" y1="270" x2="190" y2="300"/>
+  <line class="arrow" x1="320" y1="330" x2="420" y2="140"/>
+  <line class="arrow" x1="620" y1="180" x2="620" y2="200"/>
+  <line class="arrow" x1="620" y1="290" x2="620" y2="310"/>
+  <line class="arrow" x1="820" y1="330" x2="920" y2="140"/>
+
+  <!-- Fallback arrow (dashed amber) -->
+  <path class="arrow-fb" d="M 820 360 Q 870 400 920 400"/>
+
+  <!-- Response path (dashed green) -->
+  <line class="arrow-back" x1="920" y1="140" x2="820" y2="340"/>
+  <line class="arrow-back" x1="620" y1="390" x2="620" y2="430" stroke-dasharray="0"/>
+  <line class="arrow-back" x1="420" y1="140" x2="320" y2="340"/>
+  <line class="arrow-back" x1="190" y1="300" x2="190" y2="270"/>
+  <line class="arrow-back" x1="190" y1="210" x2="190" y2="190"/>
+
+  <!-- Legend -->
+  <text class="label" x="400" y="548">Solid blue = request, dashed green = response,</text>
+  <text class="label-warm" x="760" y="548">dashed amber = silent fallback (auto mode, Perplexity 5xx)</text>
+</svg>

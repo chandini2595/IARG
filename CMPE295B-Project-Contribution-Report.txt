@@ -1,0 +1,62 @@
+CMPE 295B, Project Contribution Report
+
+Instructions (for your reference — remove this block before submitting if your instructor wants only the template sections)
+- Replace every <…> or PLACEHOLDER below with real information; remove angle brackets.
+- Rename the final Word file per Canvas: <project advisor last-name,first-name> <project number> <your last-name,your first-name>.docx
+- Example: Advisor,Joe 1 Doe,John.docx
+- Rating scale: 1 = best contribution, 10 = worst. Adjust numbers to reflect your honest assessment.
+
+
+Project Info
+
+Project Title: IARG — Intangible-Asset Risk Guardian: agentic asset discovery, explainable risk scoring, simulated insurance coverage, and Google Drive security incident hooks
+
+Project Advisor: PLACEHOLDER — replace with your Canvas group advisor (Last,First as required)
+
+
+Team Member 1 (self)
+
+Name: PLACEHOLDER — replace with your name in Last,First format (e.g., Doe,Jane)
+
+Rating: 2
+
+Contribution Description:
+Across CMPE 295A and 295B, this member anchored delivery of the IARG end-to-end MVP described in the repository and MVP documentation. Early work focused on scoping the Guardian loop (GitHub activity → risk score → insurance decision → persisted evidence) and aligning the team on service boundaries (dashboard, Guardian API, supporting data services, and Docker-based local stack). During implementation, they owned substantial portions of the React + TypeScript dashboard (Vite dev setup, API integration via the Guardian proxy, Settings flows for “Run Scan & Evaluate,” Google Drive breach reporting, and Drive monitor status/poll actions), coordinated local runs with docker-compose (Kafka, Neo4j, Redis, MinIO, ingest/graph/score/guardian containers), and debugged cross-service issues such as GitHub authentication failures and clearer API error surfacing in the UI. They contributed to backend-facing work where applicable: understanding FastAPI routes, scan orchestration, risk persistence, and insurance trigger semantics; writing or refining tests in the Guardian and dashboard workspaces; and tightening developer experience (environment variables, .env handling, restart procedures). They also supported integration testing of the Drive breach and optional ACL monitor paths against the documented contract. Documentation and demo readiness (walking through MVP.md, reproducible setup, and advisor demos) were recurring responsibilities so the project stayed reviewable and reproducible for both semesters.
+
+
+Team Member 2
+
+Name: PLACEHOLDER — teammate 2 Last,First
+
+Rating: 2
+
+Contribution Description:
+This member led or co-led backend and data-plane work for IARG. In 295A they helped define persistence and evidence shapes for insurance purchases and contributed to the Guardian service design (GitHub client usage, commit/PR/issue metrics, cooldown and threshold behavior). In 295B they implemented or extended core Python services: FastAPI endpoints for scan, monitor summary, risk latest, and insurance purchase listing; storage/SQLite interactions for monitor state and purchase history; and the insurance engine logic that maps risk scores to policy templates. They worked closely with the risk-scoring module (heuristic and optional demo model path), evidence collection for triggered purchases, and error handling for external dependencies (e.g., GitHub API failures). They also supported the Docker Compose wiring for the guardian service and dependency health checks, and added or maintained pytest coverage for Guardian behaviors including Google Drive breach and cooldown cases.
+
+
+Team Member 3
+
+Name: PLACEHOLDER — teammate 3 Last,First
+
+Rating: 3
+
+Contribution Description:
+This member focused on event-driven and graph-oriented components of the platform. They contributed to the Node ingest service and its interaction with Kafka and Redis, ensuring events produced during ingestion aligned with downstream consumers. They worked on the Go-based graph service (Neo4j connectivity, API surface exposed on port 8001) and helped validate graph queries or API contracts used by the rest of the stack. Across both semesters they participated in integration debugging (container networking, broker addresses, environment variables for Neo4j credentials), and in 295B they improved reliability of the compose stack (service startup order, healthchecks, or local volume mounts for development). They documented how to run graph-related tests (`go test`) and assisted teammates when ingest or graph containers failed during demos.
+
+
+Team Member 4
+
+Name: PLACEHOLDER — teammate 4 Last,First — delete this entire Team Member 4 section if your group has fewer than four people
+
+Rating: 3
+
+Contribution Description:
+This member owned the risk scoring microservice (Python on port 8002), including REST exposure under the project’s API conventions and test coverage with pytest. They translated product requirements into scoring inputs (features derived from repo activity and exposure proxies), tuned normalization constants, and coordinated with the Guardian team on how scores and explanations are returned for UI display. They contributed to cross-service configuration (Kafka broker settings, Redis where used by score) and to end-to-end validation: triggering scans and confirming score service behavior under load of the compose environment. In 295A they helped establish the scoring methodology narrative for the report and poster; in 295B they iterated on explainability fields consumed by the dashboard charts and risk breakdown views.
+
+
+---
+Before upload:
+1. Replace all PLACEHOLDER names and the advisor line.
+2. Edit each Contribution Description so it matches what each person actually did (the paragraphs above are aligned to this repo’s architecture but may need names, dates, and specifics you know).
+3. Adjust ratings (1–10) per course policy and your honest peer evaluation.
+4. Save as Microsoft Word .docx with the required filename, then submit on Canvas.

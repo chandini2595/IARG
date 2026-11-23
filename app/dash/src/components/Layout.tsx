@@ -77,6 +77,24 @@ function IconInsurance(props: { className?: string }) {
   )
 }
 
+function IconChat(props: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={props.className}
+    >
+      <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z" />
+      <path d="M8 10h8" />
+      <path d="M8 14h5" />
+    </svg>
+  )
+}
+
 function IconSettings(props: { className?: string }) {
   return (
     <svg
@@ -99,6 +117,7 @@ const navItems = [
   { to: '/assets', label: 'Assets', Icon: IconAssets },
   { to: '/risk-scoring', label: 'Risk Scoring', Icon: IconRisk },
   { to: '/insurance', label: 'Insurance', Icon: IconInsurance },
+  { to: '/chat', label: 'Assistant', Icon: IconChat },
   { to: '/settings', label: 'Settings', Icon: IconSettings },
 ]
 

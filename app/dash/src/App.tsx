@@ -9,6 +9,7 @@ import Assets from '@/pages/Assets'
 import AssetDetail from '@/pages/AssetDetail'
 import RiskScoring from '@/pages/RiskScoring'
 import Insurance from '@/pages/Insurance'
+import Chat from '@/pages/Chat'
 import Settings from '@/pages/Settings'
 
 import '@/styles/globals.css'
@@ -35,6 +36,7 @@ function App() {
               <Route path="/assets/:id" element={<AssetDetail />} />
               <Route path="/risk-scoring" element={<RiskScoring />} />
               <Route path="/insurance" element={<Insurance />} />
+              <Route path="/chat" element={<Chat />} />
               <Route path="/settings" element={<Settings />} />
             </Routes>
           </Layout>

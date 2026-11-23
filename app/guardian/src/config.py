@@ -82,6 +82,14 @@ class Settings(BaseSettings):
     # Synthetic score used for breach-triggered insurance (>= 80 selects parametric policy).
     drive_breach_synthetic_risk_score: float = 95.0
 
+    # Chat (Assistant tab) upstream LLM provider.
+    # - "auto"       : prefer perplexity if a key is set, else llm7
+    # - "perplexity" : OpenAI-compatible, needs perplexity_api_key
+    # - "llm7"       : free, no key, rate-limited
+    guardian_chat_provider: str = "auto"
+    perplexity_api_key: str = ""
+    perplexity_default_model: str = "sonar"
+
     @property
     def github_repos_list(self) -> List[str]:
         s = (self.github_repos or "").strip()

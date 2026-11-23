@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Literal, Optional
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi import Request
+from pydantic import BaseModel, Field
 
 from src.config import settings
 from src.models.schemas import (
@@ -20,6 +22,7 @@ from src.models.schemas import (
     ScanNowResponse,
 )
 from src.services.drive_monitor_service import DriveMonitorService
+from src.services.github_client import GitHubApiError
 from src.services.guardian_service import GuardianService
 from src.services.storage import Storage
 
@@ -76,11 +79,28 @@ async def scan_now(
     window_days = int(body.window_days) if body.window_days is not None else int(settings.scan_window_days)
 
     svc = get_guardian_service(request)
-    result = await svc.scan_now(
-        candidate_repos=candidate_repos,
-        threshold=threshold,
-        window_days=window_days,
-    )
+    try:
+        result = await svc.scan_now(
+            candidate_repos=candidate_repos,
+            threshold=threshold,
+            window_days=window_days,
+        )
+    except GitHubApiError as e:
+        if e.status_code == 401:
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    "GitHub rejected the credentials (401). Fix or unset GITHUB_TOKEN: use a valid classic PAT "
+                    '(Authorization: token) or a fine-grained PAT (starts with github_pat_; sent as Bearer), '
+                    "or remove the token to scan public repos with lower rate limits."
+                ),
+            ) from e
+        if e.status_code == 403:
+            raise HTTPException(
+                status_code=502,
+                detail="GitHub API forbidden or rate limited (403). Wait or supply a token with higher limits.",
+            ) from e
+        raise HTTPException(status_code=502, detail=str(e)[:800]) from e
 
     risk = result["risk"]
 
@@ -262,3 +282,306 @@ async def purchase_detail(request: Request, purchase_id: str) -> PurchaseDetail:
 
     return PurchaseDetail(purchase=purchase, evidence=evidence)
 
+
+
+# ---------------------------------------------------------------------------
+# Chat (Assistant tab — LLM proxy)
+# ---------------------------------------------------------------------------
+# Two upstream providers are supported:
+#
+#   * perplexity : OpenAI-compatible; needs PERPLEXITY_API_KEY. "sonar" models
+#                  include web-grounded citations.
+#   * llm7       : free, no API key, rate-limited. Default fallback.
+#
+# Provider selection is controlled by GUARDIAN_CHAT_PROVIDER:
+#   "auto"       -> perplexity if key is set, else llm7
+#   "perplexity" -> perplexity only (401 if key missing)
+#   "llm7"       -> llm7 only
+#
+# On a transient perplexity failure (except 401), we fall back to llm7 so the
+# chat tab stays functional.
+
+LLM7_URL = "https://api.llm7.io/v1/chat/completions"
+PERPLEXITY_URL = "https://api.perplexity.ai/chat/completions"
+
+# LLM7 free-tier aliases
+_LLM7_DEFAULT_MODEL = "mistral-Nemo-Instruct-2407"
+_LLM7_ALIASES: Dict[str, str] = {
+    "mistral": "mistral-Nemo-Instruct-2407",
+    "mistral-nemo": "mistral-Nemo-Instruct-2407",
+    "gpt-oss": "gpt-oss:20b",
+    "gpt-oss:20b": "gpt-oss:20b",
+    "nemotron": "nemotron-3-nano:30b",
+    "nemotron-3-nano:30b": "nemotron-3-nano:30b",
+}
+
+# Perplexity model aliases (frontend short name -> real model id)
+_PERPLEXITY_DEFAULT_MODEL = "sonar"
+_PERPLEXITY_ALIASES: Dict[str, str] = {
+    "sonar": "sonar",
+    "sonar-pro": "sonar-pro",
+    "sonar-reasoning": "sonar-reasoning",
+    "sonar-reasoning-pro": "sonar-reasoning-pro",
+    "sonar-deep-research": "sonar-deep-research",
+}
+
+
+class ChatMessage(BaseModel):
+    role: Literal["system", "user", "assistant"]
+    content: str = Field(..., min_length=1)
+
+
+class ChatRequest(BaseModel):
+    messages: List[ChatMessage] = Field(..., min_length=1, max_length=50)
+    # Short alias (sonar / sonar-pro / mistral-nemo / ...). The backend
+    # chooses the provider based on GUARDIAN_CHAT_PROVIDER and resolves the
+    # alias to the real model id for that provider.
+    model: str = "sonar"
+
+
+class ChatResponse(BaseModel):
+    model: str
+    provider: str
+    content: str
+
+
+def _extract_content(data: Any) -> str:
+    """
+    Pull a usable string out of an OpenAI-style chat completion response.
+    Falls back to `reasoning` / `reasoning_content` for reasoning models that
+    leave `content` empty (e.g. gpt-oss, nemotron, sonar-reasoning).
+    """
+    if not isinstance(data, dict):
+        return ""
+    choices = data.get("choices") or []
+    if not choices:
+        return str(data.get("content") or "")
+
+    msg = choices[0].get("message") or {}
+    content = (msg.get("content") or "").strip()
+    if content:
+        return content
+
+    reasoning = (msg.get("reasoning") or msg.get("reasoning_content") or "").strip()
+    if reasoning:
+        return reasoning
+
+    delta = choices[0].get("delta") or {}
+    return (delta.get("content") or "").strip()
+
+
+def _append_citations(content: str, data: Any) -> str:
+    """
+    Perplexity returns a `citations` list (and some models embed [1][2] refs
+    in the text). If citations exist and the content doesn't already contain a
+    "Sources:" tail, append a compact source list.
+    """
+    if not isinstance(data, dict):
+        return content
+    citations = data.get("citations") or data.get("search_results") or []
+    if not citations:
+        return content
+    if "Sources:" in content or "sources:" in content.lower():
+        return content
+
+    urls: List[str] = []
+    for c in citations[:5]:
+        if isinstance(c, str):
+            urls.append(c)
+        elif isinstance(c, dict):
+            u = c.get("url")
+            if isinstance(u, str):
+                urls.append(u)
+    if not urls:
+        return content
+
+    lines = ["", "", "Sources:"]
+    for i, u in enumerate(urls, start=1):
+        lines.append(f"{i}. {u}")
+    return content + "\n".join(lines)
+
+
+def _resolve_provider(model_alias: str) -> str:
+    """
+    Decide which upstream to use given config + the requested model alias.
+    """
+    cfg = (settings.guardian_chat_provider or "auto").strip().lower()
+    has_pplx = bool((settings.perplexity_api_key or "").strip())
+
+    if cfg == "perplexity":
+        return "perplexity"
+    if cfg == "llm7":
+        return "llm7"
+
+    # auto: route by alias if clear, else key presence
+    if model_alias in _PERPLEXITY_ALIASES:
+        return "perplexity" if has_pplx else "llm7"
+    if model_alias in _LLM7_ALIASES:
+        return "llm7"
+    return "perplexity" if has_pplx else "llm7"
+
+
+async def _call_perplexity(messages: List[Dict[str, str]], model_alias: str) -> ChatResponse:
+    key = (settings.perplexity_api_key or "").strip()
+    if not key:
+        raise HTTPException(
+            status_code=401,
+            detail="Perplexity selected but PERPLEXITY_API_KEY is not set.",
+        )
+
+    model = _PERPLEXITY_ALIASES.get(model_alias, _PERPLEXITY_DEFAULT_MODEL)
+    payload = {
+        "model": model,
+        "messages": messages,
+        "max_tokens": 800,
+        "temperature": 0.4,
+    }
+
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        resp = await client.post(
+            PERPLEXITY_URL,
+            json=payload,
+            headers={
+                "Authorization": f"Bearer {key}",
+                "Content-Type": "application/json",
+                "User-Agent": "iarg-guardian/1.0",
+            },
+        )
+
+    if resp.status_code >= 400:
+        snippet = resp.text[:400] if resp.text else resp.reason_phrase
+        if resp.status_code in (401, 403):
+            raise HTTPException(
+                status_code=502,
+                detail=f"Perplexity rejected credentials ({resp.status_code}). Check PERPLEXITY_API_KEY.",
+            )
+        if resp.status_code == 429:
+            raise HTTPException(
+                status_code=429,
+                detail="Perplexity rate limit exceeded. Try again shortly.",
+            )
+        raise HTTPException(
+            status_code=502,
+            detail=f"Perplexity returned {resp.status_code}: {snippet}",
+        )
+
+    try:
+        data = resp.json()
+    except Exception:
+        data = {}
+
+    content = _extract_content(data)
+    if not content:
+        raise HTTPException(status_code=502, detail="Empty response from Perplexity.")
+
+    content = _append_citations(content, data)
+    return ChatResponse(model=model, provider="perplexity", content=content)
+
+
+async def _call_llm7(messages: List[Dict[str, str]], model_alias: str) -> ChatResponse:
+    model = _LLM7_ALIASES.get(model_alias, _LLM7_DEFAULT_MODEL)
+    payload = {
+        "model": model,
+        "messages": messages,
+        "max_tokens": 800,
+        "temperature": 0.7,
+    }
+
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        resp = await client.post(
+            LLM7_URL,
+            json=payload,
+            headers={
+                "Content-Type": "application/json",
+                "User-Agent": "iarg-guardian/1.0",
+            },
+        )
+
+    if resp.status_code >= 400:
+        snippet = resp.text[:400] if resp.text else resp.reason_phrase
+        if resp.status_code == 429:
+            try:
+                info = resp.json().get("error", {})
+                retry = info.get("retry_after")
+                if retry:
+                    raise HTTPException(
+                        status_code=429,
+                        detail=f"Model is rate-limited. Retry in {retry}s.",
+                    )
+            except HTTPException:
+                raise
+            except Exception:
+                pass
+        raise HTTPException(
+            status_code=502,
+            detail=f"LLM7 returned {resp.status_code}: {snippet}",
+        )
+
+    try:
+        data = resp.json()
+    except Exception:
+        data = {}
+
+    content = _extract_content(data)
+    if not content:
+        raise HTTPException(status_code=502, detail="Empty response from LLM7.")
+    return ChatResponse(model=model, provider="llm7", content=content)
+
+
+@router.get("/chat/providers")
+async def chat_providers() -> Dict[str, Any]:
+    """
+    Report which chat providers are configured. The frontend uses this to
+    decide which model list to render.
+    """
+    cfg = (settings.guardian_chat_provider or "auto").strip().lower()
+    has_pplx = bool((settings.perplexity_api_key or "").strip())
+
+    if cfg == "perplexity":
+        active = "perplexity"
+    elif cfg == "llm7":
+        active = "llm7"
+    else:
+        active = "perplexity" if has_pplx else "llm7"
+
+    return {
+        "configured": cfg,
+        "active": active,
+        "perplexity_available": has_pplx,
+        "models": {
+            "perplexity": list(_PERPLEXITY_ALIASES.keys()) if has_pplx else [],
+            "llm7": list({v: None for v in _LLM7_ALIASES.values()}.keys()),
+        },
+    }
+
+
+@router.post("/chat", response_model=ChatResponse)
+async def chat(body: ChatRequest) -> ChatResponse:
+    model_alias = (body.model or "").strip() or _PERPLEXITY_DEFAULT_MODEL
+    messages = [m.model_dump() for m in body.messages]
+
+    provider = _resolve_provider(model_alias)
+    cfg = (settings.guardian_chat_provider or "auto").strip().lower()
+
+    try:
+        if provider == "perplexity":
+            return await _call_perplexity(messages, model_alias)
+        return await _call_llm7(messages, model_alias)
+    except HTTPException as e:
+        # Fall back to llm7 on transient perplexity failures, but not on auth
+        # issues (user needs to see those).
+        if (
+            provider == "perplexity"
+            and cfg == "auto"
+            and e.status_code not in (401, 403, 429)
+        ):
+            # Pick a sensible llm7 model to retry with.
+            return await _call_llm7(messages, "mistral-nemo")
+        raise
+    except httpx.HTTPError as e:
+        if provider == "perplexity" and cfg == "auto":
+            try:
+                return await _call_llm7(messages, "mistral-nemo")
+            except Exception:
+                pass
+        raise HTTPException(status_code=502, detail=f"Upstream LLM error: {e}") from e

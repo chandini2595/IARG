@@ -10,6 +10,15 @@ from src.config import Settings, settings
 from src.models.schemas import RepoVisibility
 
 
+class GitHubApiError(Exception):
+    """Raised when the GitHub REST API returns a non-success status."""
+
+    def __init__(self, status_code: int, *, message: str, body_preview: str = ""):
+        self.status_code = status_code
+        self.body_preview = body_preview
+        super().__init__(message)
+
+
 class GitHubClient:
     def __init__(self, cfg: Settings = settings):
         self.cfg = cfg
@@ -19,11 +28,24 @@ class GitHubClient:
             "Accept": "application/vnd.github+json",
             "X-GitHub-Api-Version": "2022-11-28",
         }
-        if cfg.github_token:
-            headers["Authorization"] = f"token {cfg.github_token}"
+        # Fine-grained PATs must use Bearer; classic PATs use token.
+        # See https://docs.github.com/en/rest/authentication/authenticating-to-the-rest-api
+        tok = (cfg.github_token or "").strip()
+        if tok:
+            scheme = "Bearer" if tok.startswith("github_pat_") else "token"
+            headers["Authorization"] = f"{scheme} {tok}"
 
         self._headers = headers
-        self._client = httpx.AsyncClient(base_url=self.base_url, headers=headers, timeout=20.0)
+        # follow_redirects: GitHub returns 301 "Moved Permanently" for repos
+        # that have been transferred (e.g. facebook/react -> reactjs/react).
+        # Letting httpx follow the redirect means the scan still works with
+        # the user's old owner/repo input and surfaces the current data.
+        self._client = httpx.AsyncClient(
+            base_url=self.base_url,
+            headers=headers,
+            timeout=20.0,
+            follow_redirects=True,
+        )
 
     async def close(self) -> None:
         await self._client.aclose()
@@ -155,10 +177,12 @@ class GitHubClient:
     async def _raise_for_status(self, res: httpx.Response) -> None:
         if res.status_code in (200, 201):
             return
-        if res.status_code == 403:
-            # Often rate limit
-            raise RuntimeError(f"GitHub API rate limit / forbidden: {res.text[:500]}")
-        raise RuntimeError(f"GitHub API error {res.status_code}: {res.text[:500]}")
+        preview = res.text[:500]
+        raise GitHubApiError(
+            res.status_code,
+            message=f"GitHub API error {res.status_code}: {preview}",
+            body_preview=preview,
+        )
 
     @staticmethod
     def parse_repo_visibility(repo: Dict[str, Any]) -> RepoVisibility:
